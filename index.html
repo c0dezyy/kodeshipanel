@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kodeshi Control Panel</title>
+<style>
+:root{--bg:#0f1318;--panel:#171d25;--panel2:#1d2530;--line:#2a3441;--text:#e6edf3;--mut:#8b98a8;--accent:#3ddc84;--red:#ff5d5d;--yellow:#f5c542;--blue:#4da3ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+.hide{display:none!important}
+button{background:var(--panel2);border:1px solid var(--line);padding:8px 14px;border-radius:8px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:wait}
+button.primary{background:var(--accent);color:#06210f;border-color:var(--accent);font-weight:600}
+input,textarea{background:#0b0f14;border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%}
+input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px;width:100%;max-width:360px}
+.card h1{margin:0 0 4px;font-size:22px}
+.card p{margin:0 0 20px;color:var(--mut)}
+.card label{display:block;margin:12px 0 6px;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.err{color:var(--red);margin-top:12px;min-height:20px}
+
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:16px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--mut)}
+.dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.dot.off{background:var(--red)}
+.status{color:var(--mut);font-weight:400;font-size:13px}
+.power{display:flex;gap:8px;flex-wrap:wrap}
+.power .start{color:var(--accent)}.power .restart{color:var(--yellow)}.power .stop{color:var(--red)}
+nav{display:flex;gap:4px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+nav button{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;padding:12px 16px;color:var(--mut)}
+nav button.active{color:var(--text);border-bottom-color:var(--accent)}
+main{padding:20px;max-width:1100px;margin:0 auto}
+
+#term{background:#05080b;border:1px solid var(--line);border-radius:10px 10px 0 0;height:60vh;min-height:280px;overflow:auto;padding:12px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+#term .cmd{color:var(--accent)}#term .res{color:var(--blue)}#term .bad{color:var(--red)}
+.cmdbar{display:flex;border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;background:#0b0f14}
+.cmdbar span{padding:10px 0 10px 12px;color:var(--accent);font-family:ui-monospace,monospace}
+.cmdbar input{border:none;background:none;border-radius:0}
+.hint{color:var(--mut);margin-top:10px;font-size:12px}
+
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.crumbs{font-family:ui-monospace,monospace;color:var(--mut)}
+.crumbs a{color:var(--blue);cursor:pointer}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+td{padding:10px 12px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+tr.row:hover{background:var(--panel2)}
+td.n{cursor:pointer;word-break:break-all}
+td.m{color:var(--mut);white-space:nowrap}
+td.a{text-align:right;white-space:nowrap}
+td.a button{padding:4px 8px;font-size:12px;margin-left:4px}
+@media(max-width:640px){td.m.hd{display:none}}
+
+#editor{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
+#editor .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:100%;max-width:900px;height:85vh;display:flex;flex-direction:column;padding:14px;gap:10px}
+#editor textarea{flex:1;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;resize:none;white-space:pre}
+#editor .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:8px;z-index:20;max-width:90vw}
+</style>
+</head>
+<body>
+
+<section id="login">
+  <div class="card">
+    <h1>Kodeshi Panel</h1>
+    <p>Sign in to manage your server</p>
+    <label for="u">Username</label>
+    <input id="u" autocomplete="username">
+    <label for="p">Password</label>
+    <input id="p" type="password" autocomplete="current-password">
+    <button class="primary" id="loginBtn" style="width:100%;margin-top:18px">Login</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</section>
+
+<section id="app" class="hide">
+  <header>
+    <div class="brand"><span class="dot" id="dot"></span>Kodeshi Server <span class="status" id="status">checking…</span></div>
+    <div class="power">
+      <button class="start" data-sig="start">▶ Start</button>
+      <button class="restart" data-sig="restart">⟳ Restart</button>
+      <button class="stop" data-sig="stop">■ Stop</button>
+      <button id="logout">Logout</button>
+    </div>
+  </header>
+  <nav>
+    <button class="active" data-tab="console">Console</button>
+    <button data-tab="files">Files</button>
+  </nav>
+  <main>
+    <div id="tab-console">
+      <div id="term"></div>
+      <div class="cmdbar"><span>&gt;</span><input id="cmd" placeholder="Type a command and press Enter" autocomplete="off" spellcheck="false"></div>
+      <div class="hint">Commands run through RCON. /tp and /give are blocked.</div>
+    </div>
+    <div id="tab-files" class="hide">
+      <div class="bar">
+        <div class="crumbs" id="crumbs"></div>
+        <div class="tools">
+          <button id="newFile">+ File</button>
+          <button id="newDir">+ Folder</button>
+          <button id="uploadBtn">Upload</button>
+          <input type="file" id="uploadIn" class="hide">
+          <button id="refresh">Refresh</button>
+        </div>
+      </div>
+      <table><tbody id="rows"></tbody></table>
+    </div>
+  </main>
+</section>
+
+<div id="editor" class="hide">
+  <div class="box">
+    <div class="top"><strong id="edName"></strong><div><button class="primary" id="edSave">Save</button> <button id="edClose">Close</button></div></div>
+    <textarea id="edText" spellcheck="false"></textarea>
+  </div>
+</div>
+<div id="toast" class="hide"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function api(action, data = {}) {
+  const r = await fetch('api.php', {
+    method: 'POST', credentials: 'same-origin',
+    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'panel'},
+    body: JSON.stringify({action, ...data})
+  });
+  let j; try { j = await r.json(); } catch { throw new Error('Server error (is api.php running?)'); }
+  if (r.status === 401 && action !== 'login') showLogin();
+  if (!j.ok) throw new Error(j.error || 'Request failed');
+  return j;
+}
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.remove('hide');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add('hide'), 3500);
+}
+
+/* ---------- auth ---------- */
+function showLogin() { stopTimers(); $('#app').classList.add('hide'); $('#login').classList.remove('hide'); }
+function showApp() { $('#login').classList.add('hide'); $('#app').classList.remove('hide'); startTimers(); loadLog(); loadStatus(); }
+async function doLogin() {
+  $('#loginErr').textContent = ''; $('#loginBtn').disabled = true;
+  try { await api('login', {username: $('#u').value, password: $('#p').value}); $('#p').value = ''; showApp(); }
+  catch (e) { $('#loginErr').textContent = e.message; }
+  $('#loginBtn').disabled = false;
+}
+$('#loginBtn').onclick = doLogin;
+$('#p').onkeydown = $('#u').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
+$('#logout').onclick = async () => { await api('logout').catch(() => {}); showLogin(); };
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('active', x === b));
+  ['console', 'files'].forEach(t => $('#tab-' + t).classList.toggle('hide', t !== b.dataset.tab));
+  if (b.dataset.tab === 'files') loadFiles(cwd);
+});
+
+/* ---------- status + power ---------- */
+async function loadStatus() {
+  try {
+    const j = await api('status');
+    $('#dot').className = 'dot ' + (j.online ? 'on' : 'off');
+    $('#status').textContent = j.online ? j.info.split(':')[0].replace(/^There are /, '') || 'Online' : 'Offline';
+  } catch { $('#dot').className = 'dot'; $('#status').textContent = 'unknown'; }
+}
+document.querySelectorAll('[data-sig]').forEach(b => b.onclick = async () => {
+  const sig = b.dataset.sig;
+  if (sig !== 'start' && !confirm(`${sig === 'stop' ? 'Stop' : 'Restart'} the server?`)) return;
+  b.disabled = true;
+  try { const j = await api('power', {signal: sig}); toast(j.message); addLine(`[panel] ${j.message}`, 'res'); setTimeout(loadStatus, 4000); }
+  catch (e) { toast(e.message); addLine(e.message, 'bad'); }
+  b.disabled = false;
+});
+
+/* ---------- console ---------- */
+let logText = '', local = [], timers = [];
+const term = $('#term');
+function render() {
+  const stick = term.scrollHeight - term.scrollTop - term.clientHeight < 40;
+  term.innerHTML = esc(logText) + local.map(l => `<div class="${l.c}">${esc(l.t)}</div>`).join('');
+  if (stick) term.scrollTop = term.scrollHeight;
+}
+function addLine(t, c) { local.push({t, c}); if (local.length > 200) local.shift(); render(); }
+async function loadLog() {
+  try { logText = (await api('log')).log; render(); }
+  catch (e) { if (!logText) { logText = ''; addLine(e.message, 'bad'); } }
+}
+function startTimers() { stopTimers(); timers = [setInterval(loadLog, 3000), setInterval(loadStatus, 15000)]; }
+function stopTimers() { timers.forEach(clearInterval); timers = []; }
+
+const hist = []; let hi = 0;
+$('#cmd').onkeydown = async e => {
+  const inp = e.target;
+  if (e.key === 'ArrowUp') { if (hi > 0) inp.value = hist[--hi]; e.preventDefault(); }
+  else if (e.key === 'ArrowDown') { inp.value = hist[++hi] || ''; if (hi > hist.length) hi = hist.length; e.preventDefault(); }
+  else if (e.key === 'Enter') {
+    const c = inp.value.trim(); if (!c) return;
+    hist.push(c); hi = hist.length; inp.value = '';
+    addLine('> ' + c, 'cmd');
+    try { const j = await api('console', {command: c}); addLine(j.output || '(no output)', 'res'); }
+    catch (er) { addLine(er.message, 'bad'); }
+  }
+};
+
+/* ---------- files ---------- */
+let cwd = '/', editing = '';
+const join = (a, b) => (a === '/' ? '' : a) + '/' + b;
+const fmtSize = n => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
+const fmtDate = t => t ? new Date(t * 1000).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'}) : '';
+
+async function loadFiles(p) {
+  try {
+    const j = await api('list', {path: p}); cwd = j.path;
+    const parts = cwd.split('/').filter(Boolean); let acc = '';
+    $('#crumbs').innerHTML = '<a data-p="/">root</a>' + parts.map(s => { acc += '/' + s; return ` / <a data-p="${esc(acc)}">${esc(s)}</a>`; }).join('');
+    $('#crumbs').querySelectorAll('a').forEach(a => a.onclick = () => loadFiles(a.dataset.p));
+    const up = cwd !== '/' ? `<tr class="row"><td class="n" data-up="1">📁 ..</td><td></td><td></td><td></td></tr>` : '';
+    $('#rows').innerHTML = up + j.items.map((f, i) => `<tr class="row"><td class="n" data-i="${i}">${f.dir ? '📁' : '📄'} ${esc(f.name)}</td><td class="m">${f.dir ? '' : fmtSize(f.size)}</td><td class="m hd">${fmtDate(f.mtime)}</td><td class="a">${f.dir ? '' : `<button data-dl="${i}">⬇</button>`}<button data-rn="${i}">Rename</button><button data-rm="${i}">Delete</button></td></tr>`).join('') || '<tr><td>Empty folder</td></tr>';
+    const items = j.items;
+    $('#rows').onclick = async e => {
+      const t = e.target, d = t.dataset;
+      if (d.up !== undefined || t.closest('[data-up]')) return loadFiles(cwd.replace(/\/[^/]*$/, '') || '/');
+      const idx = d.i ?? d.dl ?? d.rn ?? d.rm; if (idx === undefined) return;
+      const f = items[idx], path = join(cwd, f.name);
+      if (d.i !== undefined) return f.dir ? loadFiles(path) : openEditor(path);
+      if (d.dl !== undefined) return location.href = 'api.php?action=download&path=' + encodeURIComponent(path);
+      if (d.rn !== undefined) {
+        const n = prompt('New name', f.name); if (!n || n === f.name) return;
+        try { await api('rename', {from: path, to: join(cwd, n)}); loadFiles(cwd); } catch (er) { toast(er.message); }
+      }
+      if (d.rm !== undefined) {
+        if (!confirm(`Delete ${f.name}?`)) return;
+        try { await api('delete', {path}); loadFiles(cwd); } catch (er) { toast(er.message); }
+      }
+    };
+  } catch (e) { toast(e.message); }
+}
+$('#refresh').onclick = () => loadFiles(cwd);
+$('#newDir').onclick = async () => {
+  const n = prompt('Folder name'); if (!n) return;
+  try { await api('mkdir', {path: join(cwd, n)}); loadFiles(cwd); } catch (e) { toast(e.message); }
+};
+$('#newFile').onclick = () => { const n = prompt('File name'); if (n) openEditor(join(cwd, n), true); };
+$('#uploadBtn').onclick = () => $('#uploadIn').click();
+$('#uploadIn').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const fd = new FormData(); fd.append('action', 'upload'); fd.append('path', cwd); fd.append('file', f);
+  try {
+    const r = await fetch('api.php', {method: 'POST', credentials: 'same-origin', headers: {'X-Requested-With': 'panel'}, body: fd});
+    const j = await r.json(); if (!j.ok) throw new Error(j.error);
+    toast('Uploaded'); loadFiles(cwd);
+  } catch (er) { toast(er.message); }
+  e.target.value = '';
+};
+
+async function openEditor(path, isNew) {
+  try {
+    const content = isNew ? '' : (await api('read', {path})).content;
+    editing = path; $('#edName').textContent = path; $('#edText').value = content; $('#editor').classList.remove('hide');
+  } catch (e) { toast(e.message); }
+}
+$('#edClose').onclick = () => $('#editor').classList.add('hide');
+$('#edSave').onclick = async () => {
+  try { await api('write', {path: editing, content: $('#edText').value}); toast('Saved'); loadFiles(cwd); }
+  catch (e) { toast(e.message); }
+};
+
+/* ---------- init ---------- */
+api('me').then(j => j.auth ? showApp() : null).catch(() => {});
+</script>
+</body>
+</html>
